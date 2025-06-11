@@ -1,0 +1,38 @@
+[
+  {
+    "username": "owner",
+    "password": "Owner@1234",
+    "role": "owner",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "lastLogin": {
+      "timestamp": 1749636436144,
+      "ip": "::1"
+    }
+  },
+  {
+    "username": "admin1",
+    "password": "MovieManiaAdmin1",
+    "role": "admin",
+    "createdAt": "2025-06-05T05:33:27.471Z",
+    "lastLogin": {
+      "timestamp": 1749400104524,
+      "ip": "::1"
+    }
+  },
+  {
+    "username": "viewer",
+    "password": "viewer123",
+    "role": "viewer",
+    "createdAt": "2025-06-05T05:44:36.668Z",
+    "lastLogin": {
+      "timestamp": 1749304815719,
+      "ip": "::1"
+    }
+  },
+  {
+    "username": "admin2",
+    "password": "MovieManiaAdmin2",
+    "role": "admin",
+    "createdAt": "2025-06-08T16:35:13.525Z"
+  }
+]
