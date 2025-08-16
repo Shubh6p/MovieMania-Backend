@@ -1,61 +1,102 @@
-const Series = require('../models/Series');
-const { logNotification } = require('../utils/logger');
+const Series = require("../models/Series");
 
-exports.list = async (req, res) => {
+// ➤ Create new series
+exports.createSeries = async (req, res) => {
+  try {
+    const { id, title, description, poster, seasons, addedBy } = req.body;
+
+    if (!id || !title) {
+      return res.status(400).json({ error: "Series ID and title are required." });
+    }
+
+    // Prevent duplicates
+    const existing = await Series.findOne({ id });
+    if (existing) {
+      return res.status(400).json({ error: "Series with this ID already exists." });
+    }
+
+    const newSeries = new Series({
+      id,
+      title,
+      description,
+      poster,
+      seasons, // ✅ save seasons instead of flat episodes
+      addedBy
+    });
+
+    await newSeries.save();
+    res.status(201).json(newSeries);
+  } catch (err) {
+    console.error("❌ Error creating series:", err);
+    res.status(500).json({ error: "Server error while creating series." });
+  }
+};
+
+// ➤ Get all series
+exports.getAllSeries = async (req, res) => {
   try {
     const series = await Series.find();
     res.json(series);
-  } catch (e) {
-    res.status(500).json({ error: 'Failed to fetch series.' });
+  } catch (err) {
+    console.error("Error fetching series:", err);
+    res.status(500).json({ error: "Server error while fetching series." });
   }
 };
 
-exports.getByCustomId = async (req, res) => {
-  try {
-    const s = await Series.findOne({ id: req.params.id });
-    if (!s) return res.status(404).json({ error: 'Series not found.' });
-    res.json(s);
-  } catch (e) {
-    res.status(500).json({ error: 'Failed to fetch series.' });
-  }
-};
 
-exports.create = async (req, res) => {
+// ➤ Get single series by ID (slug)
+exports.getSeriesById = async (req, res) => {
   try {
-    const seriesKey = Object.keys(req.body)[0];
-    const data = req.body[seriesKey];
-    const { title, description, episodes } = data || {};
+    const { id } = req.params;
+    const series = await Series.findOne({ id });
 
-    if (!seriesKey || !title || !episodes) {
-      return res.status(400).json({ error: 'Missing required fields.' });
+    if (!series) {
+      return res.status(404).json({ error: "Series not found." });
     }
-    const exists = await Series.findOne({ id: seriesKey });
-    if (exists) return res.status(409).json({ error: 'Series ID already exists.' });
 
-    const doc = new Series({
-      id: seriesKey,
-      title,
-      description,
-      episodes,
-      addedBy: data.addedBy || 'unknown'
-    });
-
-    await doc.save();
-    logNotification(`Series added: ${title}`);
-    res.status(201).json(doc);
-  } catch (e) {
-    console.error('❌ Failed to save series:', e);
-    res.status(500).json({ error: 'Failed to add series.' });
+    res.json(series);
+  } catch (err) {
+    console.error("❌ Error fetching series by ID:", err);
+    res.status(500).json({ error: "Server error while fetching series." });
   }
 };
 
-exports.deleteByCustomId = async (req, res) => {
+// ➤ Update series
+exports.updateSeries = async (req, res) => {
   try {
-    const { id } = req.body;
-    await Series.deleteOne({ id });
-    logNotification(`Series deleted: ${id}`);
-    res.send(`✅ Series '${id}' deleted.`);
-  } catch (e) {
-    res.status(500).send('❌ Internal server error.');
+    const { id } = req.params;
+    const updates = req.body;
+
+    const updatedSeries = await Series.findOneAndUpdate(
+      { id },
+      updates,
+      { new: true }
+    );
+
+    if (!updatedSeries) {
+      return res.status(404).json({ error: "Series not found." });
+    }
+
+    res.json(updatedSeries);
+  } catch (err) {
+    console.error("❌ Error updating series:", err);
+    res.status(500).json({ error: "Server error while updating series." });
+  }
+};
+
+// ➤ Delete series
+exports.deleteSeries = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deleted = await Series.findOneAndDelete({ id });
+
+    if (!deleted) {
+      return res.status(404).json({ error: "Series not found." });
+    }
+
+    res.json({ message: "✅ Series deleted successfully." });
+  } catch (err) {
+    console.error("❌ Error deleting series:", err);
+    res.status(500).json({ error: "Server error while deleting series." });
   }
 };
