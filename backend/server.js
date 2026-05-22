@@ -31,7 +31,13 @@ app.use(require('./routes/sessionRoutes'));
 app.use(require('./routes/notificationRoutes'));
 app.use(require('./routes/statsRoutes'));
 app.use(require('./routes/uploadRoutes'));
+app.use(require('./routes/backupRoutes'));
 app.use(require('./routes/pageRoutes'));
+
+// Fallback 404 handler for any unmatched routes
+app.use((req, res) => {
+  res.status(404).sendFile(path.join(frontendDir, '404.html'));
+});
 
 app.listen(PORT, () => {
   console.log(`✅ MovieMania server running at http://localhost:${PORT}`);

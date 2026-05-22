@@ -6,6 +6,7 @@ const series = require('../controllers/seriesController');
 router.get('/api/series', series.list);
 router.get('/api/series/:id', series.getByCustomId);
 router.post('/api/series', auth, series.create);
+router.delete('/api/series/:id', auth, series.deleteByCustomId);
 router.delete('/api/delete/series', auth, series.deleteByCustomId);
 
 module.exports = router;

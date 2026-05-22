@@ -1,4 +1,3 @@
-
 const Movie = require('../models/Movies');
 const { logNotification } = require('../utils/logger');
 
@@ -46,8 +45,12 @@ exports.updateByCustomId = async (req, res) => {
 exports.deleteByCustomId = async (req, res) => {
   try {
     const { id } = req.body;
+    if (!id) {
+      return res.status(400).json({ success: false, error: 'Missing movie ID.' });
+    }
+
     const movie = await Movie.findOne({ id });
-    if (!movie) return res.status(404).send('❌ Movie not found.');
+    if (!movie) return res.status(404).json({ success: false, error: '❌ Movie not found.' });
 
     const posterUrl = movie.poster;
     let publicId = null;
@@ -57,18 +60,22 @@ exports.deleteByCustomId = async (req, res) => {
     }
 
     if (publicId) {
-      const { cloudinary } = require('../config/cloudinary');
-      const result = await cloudinary.uploader.destroy(publicId);
-      if (result.result !== 'not found') {
-        console.log('🧹 Cloudinary deleted:', publicId);
+      try {
+        const { cloudinary } = require('../config/cloudinary');
+        const result = await cloudinary.uploader.destroy(publicId);
+        if (result.result !== 'not found') {
+          console.log('🧹 Cloudinary deleted:', publicId);
+        }
+      } catch (cloudinaryErr) {
+        console.error('⚠️ Cloudinary deletion skipped or failed:', cloudinaryErr.message);
       }
     }
 
     await Movie.deleteOne({ id });
     logNotification(`Movie deleted: ${id}`);
-    res.send(`✅ Post '${id}' Deleted.`);
+    res.json({ success: true, message: `✅ Post '${id}' Deleted.` });
   } catch (e) {
     console.error('❌ Failed to delete movie/poster:', e);
-    res.status(500).send('❌ Internal server error.');
+    res.status(500).json({ success: false, error: '❌ Internal server error.' });
   }
 };

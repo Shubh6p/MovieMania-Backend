@@ -12,30 +12,62 @@ exports.profile = async (req, res) => {
 };
 
 exports.addAdmin = async (req, res) => {
-  const { username, password, role } = req.body;
-  const exists = await Admin.findOne({ username });
-  if (exists) return res.json({ success: false, error: 'Username exists' });
-  await new Admin({ username, password, role, createdAt: new Date() }).save();
-  logNotification(`Admin added: ${username}`);
-  res.json({ success: true });
+  try {
+    const { username, password, role } = req.body;
+    const exists = await Admin.findOne({ username });
+    if (exists) return res.json({ success: false, error: 'Username exists' });
+    await new Admin({ username, password, role, createdAt: new Date() }).save();
+    logNotification(`Admin added: ${username}`);
+    res.json({ success: true });
+  } catch (e) {
+    console.error('❌ Add admin error:', e);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
 };
 
 exports.updateAdmin = async (req, res) => {
-  const updates = req.body;
-  const admin = await Admin.findOneAndUpdate({ username: req.params.username }, updates, { new: true });
-  if (!admin) return res.json({ success: false, error: 'Not found' });
-  res.json({ success: true });
+  try {
+    const { username, password, role, newUsername } = req.body;
+    const updates = {};
+    if (newUsername) updates.username = newUsername;
+    if (password) updates.password = password; // Raw text password matching original design
+    if (role) updates.role = role;
+
+    const admin = await Admin.findOneAndUpdate(
+      { username: req.params.username },
+      { $set: updates },
+      { new: true }
+    );
+    if (!admin) return res.json({ success: false, error: 'Not found' });
+    res.json({ success: true });
+  } catch (e) {
+    console.error('❌ Update admin error:', e);
+    if (e.code === 11000) {
+      return res.json({ success: false, error: 'Username already exists' });
+    }
+    res.json({ success: false, error: 'Internal server error' });
+  }
 };
 
 exports.deleteAdmin = async (req, res) => {
-  await Admin.deleteOne({ username: req.params.username });
-  logNotification(`Admin deleted: ${req.params.username}`);
-  res.json({ success: true });
+  try {
+    await Admin.deleteOne({ username: req.params.username });
+    logNotification(`Admin deleted: ${req.params.username}`);
+    res.json({ success: true });
+  } catch (e) {
+    console.error('❌ Delete admin error:', e);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
 };
 
 exports.listAdmins = async (req, res) => {
-  const admins = await Admin.find();
-  res.json(admins);
+  try {
+    const admins = await Admin.find();
+    res.json(admins);
+  } catch (e) {
+    console.error('❌ List admins error:', e);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 };
 
 exports.login = async (req, res) => {

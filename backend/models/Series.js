@@ -1,21 +1,27 @@
 const mongoose = require('mongoose');
 
 const EpisodeSchema = new mongoose.Schema({
+  episodeNumber: { type: Number, required: true },
   title: String,
-  link: String,
+  thumbnail: String,
+  downloads: {
+    '480p': String,
+    '720p': String,
+    '1080p': String
+  }
 }, { _id: false });
 
-const QualitySchema = new mongoose.Schema({
-  '480p': [EpisodeSchema],
-  '720p': [EpisodeSchema],
-  '1080p': [EpisodeSchema],
+const SeasonSchema = new mongoose.Schema({
+  seasonNumber: { type: Number, required: true },
+  episodes: [EpisodeSchema]
 }, { _id: false });
 
 const SeriesSchema = new mongoose.Schema({
-  id: { type: String, required: true, unique: true }, // ✅ manual id field
+  id: { type: String, required: true, unique: true },
   title: { type: String, required: true },
   description: String,
-  episodes: QualitySchema,
+  poster: String,
+  seasons: [SeasonSchema],
   addedBy: String,
 }, { timestamps: true });
 

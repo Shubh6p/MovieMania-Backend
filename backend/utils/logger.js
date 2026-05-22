@@ -11,22 +11,36 @@ function readNotifications(){
   if (!fs.existsSync(logFile)) return [];
   return fs.readFileSync(logFile, 'utf-8')
     .split('\n')
+    .map(line => line.trim())
     .filter(Boolean)
     .map(line => {
       const match = line.match(/\[(.*?)\]\s(.+)/);
-      return { timestamp: new Date(match[1]).getTime(), message: match[2] };
-    });
+      if (!match) return null;
+      const ts = new Date(match[1]).getTime();
+      return isNaN(ts) ? null : { timestamp: ts, message: match[2] };
+    })
+    .filter(Boolean);
 }
 
 function deleteNotificationsByTimestamps(indexes = []){
   if (!fs.existsSync(logFile)) return;
-  const lines = fs.readFileSync(logFile, 'utf-8').split('\n');
+  const lines = fs.readFileSync(logFile, 'utf-8')
+    .split('\n')
+    .map(line => line.trim())
+    .filter(Boolean);
+    
   const filtered = lines.filter(line => {
     const match = line.match(/\[(.*?)\]/);
-    const ts = match ? new Date(match[1]).getTime() : null;
-    return ts ? !indexes.includes(ts) : true;
+    if (!match) return false;
+    const ts = new Date(match[1]).getTime();
+    return isNaN(ts) ? false : !indexes.includes(ts);
   });
-  fs.writeFileSync(logFile, filtered.join('\n') + '\n');
+  
+  if (filtered.length === 0) {
+    if (fs.existsSync(logFile)) fs.unlinkSync(logFile);
+  } else {
+    fs.writeFileSync(logFile, filtered.join('\n') + '\n');
+  }
 }
 
 module.exports = { logNotification, readNotifications, deleteNotificationsByTimestamps };

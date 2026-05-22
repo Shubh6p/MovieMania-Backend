@@ -3,7 +3,7 @@ const { logNotification } = require('../utils/logger');
 
 exports.list = async (req, res) => {
   try {
-    const series = await Series.find();
+    const series = await Series.find().sort({ createdAt: -1 });
     res.json(series);
   } catch (e) {
     res.status(500).json({ error: 'Failed to fetch series.' });
@@ -22,22 +22,24 @@ exports.getByCustomId = async (req, res) => {
 
 exports.create = async (req, res) => {
   try {
-    const seriesKey = Object.keys(req.body)[0];
-    const data = req.body[seriesKey];
-    const { title, description, episodes } = data || {};
+    const { id, title, description, poster, seasons, addedBy } = req.body;
 
-    if (!seriesKey || !title || !episodes) {
-      return res.status(400).json({ error: 'Missing required fields.' });
+    if (!id || !title) {
+      return res.status(400).json({ error: 'Missing required fields: id and title are required.' });
     }
-    const exists = await Series.findOne({ id: seriesKey });
-    if (exists) return res.status(409).json({ error: 'Series ID already exists.' });
+
+    const exists = await Series.findOne({ id });
+    if (exists) {
+      return res.status(409).json({ error: `Series ID '${id}' already exists.` });
+    }
 
     const doc = new Series({
-      id: seriesKey,
+      id,
       title,
       description,
-      episodes,
-      addedBy: data.addedBy || 'unknown'
+      poster,
+      seasons,
+      addedBy: addedBy || 'unknown'
     });
 
     await doc.save();
@@ -51,11 +53,20 @@ exports.create = async (req, res) => {
 
 exports.deleteByCustomId = async (req, res) => {
   try {
-    const { id } = req.body;
-    await Series.deleteOne({ id });
+    const id = req.params.id || req.body.id;
+    if (!id) {
+      return res.status(400).json({ success: false, error: 'Missing series ID.' });
+    }
+
+    const result = await Series.deleteOne({ id });
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ success: false, error: 'Series not found.' });
+    }
+
     logNotification(`Series deleted: ${id}`);
-    res.send(`✅ Series '${id}' deleted.`);
+    res.json({ success: true, message: `✅ Series '${id}' deleted.` });
   } catch (e) {
-    res.status(500).send('❌ Internal server error.');
+    console.error('❌ Error deleting series:', e);
+    res.status(500).json({ success: false, error: 'Internal server error.' });
   }
 };
