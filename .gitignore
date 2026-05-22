@@ -1,0 +1,16 @@
+# Dependency directories
+node_modules/
+backend/node_modules/
+
+# Local Environment Variables (contains secrets)
+.env
+backend/.env
+
+# Local database backup files / logs
+*.log
+notifications.log
+backend/notifications.log
+
+# System files
+.DS_Store
+Thumbs.db
